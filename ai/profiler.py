@@ -5,7 +5,7 @@ import time
 
 load_dotenv()
 
-client = genai.Client(api_key=os.getenv("AIzaSyA7MFbFDvn35OHFjTMpRstq2bPCxlrhksI"))
+client = genai.Client(api_key=os.getenv("put your api key"))
 
 # ── TO SWITCH TO GROQ LATER ─────────────────────────────────────────────────
 # from groq import Groq
