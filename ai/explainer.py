@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-client = genai.Client(api_key=os.getenv("AIzaSyA7MFbFDvn35OHFjTMpRstq2bPCxlrhksI"))
+client = genai.Client(api_key=os.getenv("Put ur api"))
 
 def explain_portfolio(data: dict) -> str:
     asset_labels = {
