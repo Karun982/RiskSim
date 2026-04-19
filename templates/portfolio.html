@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>RiskSim — Portfolio Analyzer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #06080d;
+  --surface: #0c0f15;
+  --card: #111620;
+  --border: #1a2130;
+  --accent: #00e5a0;
+  --red: #ff4d6d;
+  --yellow: #f5c518;
+  --text: #dde4f0;
+  --muted: #4a5568;
+  --font-head: 'Bebas Neue', sans-serif;
+  --font-body: 'Syne', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  min-height: 100vh;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0,229,160,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,229,160,0.025) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── NAVBAR ── */
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 48px;
+  background: rgba(6,8,13,0.85);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+}
+
+.logo {
+  font-family: var(--font-head);
+  font-size: 1.5rem;
+  letter-spacing: 0.04em;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.logo em { font-style: normal; color: var(--accent); }
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  list-style: none;
+}
+
+.nav-links a {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+  text-decoration: none;
+  letter-spacing: 0.06em;
+  transition: color 0.2s;
+}
+
+.nav-links a:hover { color: var(--accent); }
+.nav-links a.active { color: var(--accent); }
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.username {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.logout-btn {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  background: none;
+  padding: 7px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.logout-btn:hover { border-color: var(--red); color: var(--red); }
+
+/* ── MAIN ── */
+main {
+  position: relative;
+  z-index: 5;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 60px 24px 100px;
+}
+
+/* Page header */
+.page-header {
+  margin-bottom: 52px;
+  animation: fadeUp 0.5s ease both;
+}
+
+.page-tag {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--accent);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.page-tag::before {
+  content: '';
+  width: 20px; height: 1px;
+  background: var(--accent);
+}
+
+.page-header h1 {
+  font-family: var(--font-head);
+  font-size: clamp(2.5rem, 5vw, 4.5rem);
+  letter-spacing: 0.03em;
+  line-height: 1;
+  margin-bottom: 12px;
+}
+
+.page-header h1 span { color: var(--accent); }
+
+.page-header p {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.8;
+  max-width: 500px;
+}
+
+/* ── INPUT SECTION ── */
+.input-section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 36px;
+  margin-bottom: 24px;
+  animation: fadeUp 0.5s 0.1s ease both;
+  position: relative;
+  overflow: hidden;
+}
+
+.input-section::before {
+  content: '';
+  position: absolute;
+  top: -60px; right: -60px;
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, rgba(0,229,160,0.06), transparent 65%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.section-label {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--muted);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-label::before {
+  content: '';
+  width: 14px; height: 1px;
+  background: var(--accent);
+}
+
+/* Holdings list */
+#holdings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.holding-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 12px;
+  align-items: center;
+  animation: fadeUp 0.3s ease both;
+}
+
+select, input[type="number"] {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 13px 16px;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  width: 100%;
+  appearance: none;
+}
+
+select:focus, input[type="number"]:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0,229,160,0.08);
+}
+
+select option { background: var(--card); }
+
+.amount-wrap {
+  position: relative;
+}
+
+.amount-wrap span {
+  position: absolute;
+  left: 14px; top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.amount-wrap input { padding-left: 28px; }
+
+.remove-btn {
+  width: 36px; height: 36px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem;
+  transition: border-color 0.2s, color 0.2s;
+  flex-shrink: 0;
+}
+
+.remove-btn:hover { border-color: var(--red); color: var(--red); }
+
+.add-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  padding: 12px 20px;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+  width: 100%;
+  justify-content: center;
+  margin-bottom: 28px;
+}
+
+.add-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Total bar */
+.total-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 24px;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+}
+
+.total-label { color: var(--muted); }
+.total-value { color: var(--accent); font-weight: 500; font-size: 1rem; }
+
+/* Analyze button */
+.analyze-btn {
+  width: 100%;
+  padding: 17px;
+  background: var(--accent);
+  color: #000;
+  border: none;
+  border-radius: 12px;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.analyze-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(0,229,160,0.3);
+}
+
+.analyze-btn.loading {
+  background: var(--border);
+  color: var(--muted);
+  cursor: wait;
+}
+
+.spinner {
+  width: 16px; height: 16px;
+  border: 2px solid var(--muted);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: none;
+}
+
+.analyze-btn.loading .spinner { display: block; }
+.analyze-btn.loading .btn-label { display: none; }
+
+/* ── RESULTS SECTION ── */
+#results {
+  display: none;
+  animation: fadeUp 0.5s ease both;
+}
+
+/* Risk badge */
+.risk-badge-wrap {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.risk-badge {
+  font-family: var(--font-head);
+  font-size: 1.1rem;
+  letter-spacing: 0.08em;
+  padding: 8px 24px;
+  border-radius: 100px;
+  border: 1px solid;
+}
+
+.risk-badge.conservative { color: var(--accent); border-color: rgba(0,229,160,0.4); background: rgba(0,229,160,0.08); }
+.risk-badge.moderate     { color: var(--yellow); border-color: rgba(245,197,24,0.4); background: rgba(245,197,24,0.08); }
+.risk-badge.aggressive   { color: var(--red);    border-color: rgba(255,77,109,0.4); background: rgba(255,77,109,0.08); }
+
+.risk-label {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* Analysis grid */
+.analysis-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.analysis-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+  transition: border-color 0.2s;
+}
+
+.analysis-card:hover { border-color: rgba(0,229,160,0.2); }
+
+.analysis-card.full { grid-column: span 2; }
+
+.analysis-card.strengths { border-left: 3px solid var(--accent); }
+.analysis-card.concerns  { border-left: 3px solid var(--red); }
+
+.card-label {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--muted);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.card-label.green { color: var(--accent); }
+.card-label.red   { color: var(--red); }
+
+.card-text {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  line-height: 1.9;
+  color: var(--text);
+}
+
+/* Donut chart */
+.portfolio-visual {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 40px;
+}
+
+.donut-wrap {
+  flex-shrink: 0;
+  position: relative;
+  width: 140px; height: 140px;
+}
+
+.donut-wrap svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+
+.donut-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.donut-total {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.donut-label {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  color: var(--muted);
+}
+
+.legend-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+}
+
+.legend-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.legend-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legend-name { color: var(--text); }
+.legend-pct  { color: var(--muted); }
+
+/* Simulate CTA */
+.sim-cta {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.sim-cta-text h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.sim-cta-text p {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.sim-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--accent);
+  color: #000;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 12px 24px;
+  border-radius: 10px;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: transform 0.15s, box-shadow 0.2s;
+}
+
+.sim-cta-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,229,160,0.3);
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 700px) {
+  nav { padding: 16px 20px; }
+  .nav-links { display: none; }
+  main { padding: 40px 16px 80px; }
+  .analysis-grid { grid-template-columns: 1fr; }
+  .analysis-card.full { grid-column: span 1; }
+  .portfolio-visual { flex-direction: column; }
+  .holding-row { grid-template-columns: 1fr auto; }
+  .holding-row select { grid-column: span 2; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav>
+  <a href="/" class="logo">Risk<em>Sim</em></a>
+  <ul class="nav-links">
+    <li><a href="/">Home</a></li>
+    <li><a href="/app">Simulate</a></li>
+    <li><a href="/portfolio" class="active">Portfolio</a></li>
+  </ul>
+  <div class="nav-right">
+    <span class="username">👤 {{ username }}</span>
+    <a href="/logout" class="logout-btn">Logout</a>
+  </div>
+</nav>
+
+<main>
+
+  <!-- Page header -->
+  <div class="page-header">
+    <div class="page-tag">AI Portfolio Analyzer</div>
+    <h1>ANALYZE YOUR<br/><span>PORTFOLIO</span></h1>
+    <p>Enter your current holdings and get an AI-powered risk analysis with personalized recommendations.</p>
+  </div>
+
+  <!-- Input section -->
+  <div class="input-section">
+    <div class="section-label">Your Holdings</div>
+
+    <div id="holdings-list">
+      <!-- Rows added dynamically -->
+    </div>
+
+    <button class="add-btn" onclick="addHolding()">+ Add Asset</button>
+
+    <div class="total-bar">
+      <span class="total-label">Total Portfolio Value</span>
+      <span class="total-value" id="total-display">₹0</span>
+    </div>
+
+    <button class="analyze-btn" id="analyze-btn" onclick="analyzePortfolio()">
+      <div class="spinner"></div>
+      <span class="btn-label">⚡ Analyze Portfolio</span>
+    </button>
+  </div>
+
+  <!-- Results -->
+  <div id="results">
+
+    <!-- Donut chart -->
+    <div class="portfolio-visual">
+      <div class="donut-wrap">
+        <svg viewBox="0 0 120 120" id="donut-svg"></svg>
+        <div class="donut-center">
+          <div class="donut-total" id="donut-total">₹0</div>
+          <div class="donut-label">total</div>
+        </div>
+      </div>
+      <div class="legend-list" id="legend-list"></div>
+    </div>
+
+    <!-- Risk badge -->
+    <div class="risk-badge-wrap">
+      <span class="risk-label">Risk Profile</span>
+      <div class="risk-badge" id="risk-badge">—</div>
+    </div>
+
+    <!-- Analysis cards -->
+    <div class="analysis-grid">
+      <div class="analysis-card full">
+        <div class="card-label">Overview</div>
+        <div class="card-text" id="overview-text">—</div>
+      </div>
+      <div class="analysis-card strengths">
+        <div class="card-label green">✦ Strengths</div>
+        <div class="card-text" id="strengths-text">—</div>
+      </div>
+      <div class="analysis-card concerns">
+        <div class="card-label red">⚠ Concerns</div>
+        <div class="card-text" id="concerns-text">—</div>
+      </div>
+      <div class="analysis-card full">
+        <div class="card-label">Recommendation</div>
+        <div class="card-text" id="recommendation-text">—</div>
+      </div>
+    </div>
+
+    <!-- Simulate CTA -->
+    <div class="sim-cta">
+      <div class="sim-cta-text">
+        <h3>Want to simulate your top asset?</h3>
+        <p>Run a full Monte Carlo simulation to see 1,000 possible futures.</p>
+      </div>
+      <a href="/app" class="sim-cta-btn">Run Simulation →</a>
+    </div>
+
+  </div>
+</main>
+
+<script>
+const ASSETS = ['stocks', 'mutual_funds', 'crypto', 'bonds', 'gold'];
+const ASSET_LABELS = {
+  stocks: 'Stocks', mutual_funds: 'Mutual Funds',
+  crypto: 'Crypto', bonds: 'Bonds', gold: 'Gold'
+};
+const COLORS = ['#00e5a0', '#f5c518', '#ff4d6d', '#6c8ebf', '#b5835a'];
+
+let holdingCount = 0;
+
+function addHolding(asset = 'stocks', amount = '') {
+  holdingCount++;
+  const id = holdingCount;
+  const div = document.createElement('div');
+  div.className = 'holding-row';
+  div.id = 'row-' + id;
+  div.innerHTML = `
+    <select onchange="updateTotal()">
+      ${ASSETS.map(a => `<option value="${a}" ${a === asset ? 'selected' : ''}>${ASSET_LABELS[a]}</option>`).join('')}
+    </select>
+    <div class="amount-wrap">
+      <span>₹</span>
+      <input type="number" placeholder="Amount" value="${amount}" min="0" step="1000" oninput="updateTotal()"/>
+    </div>
+    <button class="remove-btn" onclick="removeHolding(${id})">×</button>
+  `;
+  document.getElementById('holdings-list').appendChild(div);
+  updateTotal();
+}
+
+function removeHolding(id) {
+  const row = document.getElementById('row-' + id);
+  if (row) row.remove();
+  updateTotal();
+}
+
+function updateTotal() {
+  const inputs = document.querySelectorAll('#holdings-list input[type="number"]');
+  let total = 0;
+  inputs.forEach(i => total += parseFloat(i.value) || 0);
+  document.getElementById('total-display').textContent = formatINR(total);
+}
+
+function formatINR(v) {
+  if (v >= 1e7) return '₹' + (v/1e7).toFixed(2) + 'Cr';
+  if (v >= 1e5) return '₹' + (v/1e5).toFixed(2) + 'L';
+  return '₹' + Math.round(v).toLocaleString('en-IN');
+}
+
+function getHoldings() {
+  const rows = document.querySelectorAll('.holding-row');
+  const holdings = [];
+  rows.forEach(row => {
+    const asset  = row.querySelector('select').value;
+    const amount = parseFloat(row.querySelector('input').value) || 0;
+    if (amount > 0) holdings.push({ asset, amount });
+  });
+  return holdings;
+}
+
+async function analyzePortfolio() {
+  const holdings = getHoldings();
+  if (holdings.length === 0) {
+    alert('Please add at least one holding with an amount.');
+    return;
+  }
+
+  const btn = document.getElementById('analyze-btn');
+  btn.classList.add('loading');
+
+  try {
+    const res = await fetch('/portfolio/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ holdings }),
+    });
+
+    const data = await res.json();
+    if (!data.success) throw new Error(data.overview || 'Analysis failed');
+
+    renderResults(data, holdings);
+  } catch (err) {
+    alert('Analysis failed: ' + err.message);
+  } finally {
+    btn.classList.remove('loading');
+  }
+}
+
+function renderResults(data, holdings) {
+  const resultsEl = document.getElementById('results');
+  resultsEl.style.display = 'block';
+  resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // Risk badge
+  const badge = document.getElementById('risk-badge');
+  const profile = (data.risk_profile || '').toLowerCase();
+  badge.textContent = data.risk_profile;
+  badge.className = 'risk-badge';
+  if (profile.includes('conservative')) badge.classList.add('conservative');
+  else if (profile.includes('aggressive')) badge.classList.add('aggressive');
+  else badge.classList.add('moderate');
+
+  // Text sections
+  document.getElementById('overview-text').textContent        = data.overview || '—';
+  document.getElementById('strengths-text').textContent       = data.strengths || '—';
+  document.getElementById('concerns-text').textContent        = data.concerns || '—';
+  document.getElementById('recommendation-text').textContent  = data.recommendation || '—';
+
+  // Donut chart
+  renderDonut(holdings, data.total);
+}
+
+function renderDonut(holdings, total) {
+  const svg = document.getElementById('donut-svg');
+  const legend = document.getElementById('legend-list');
+  document.getElementById('donut-total').textContent = formatINR(total);
+
+  const cx = 60, cy = 60, r = 50, strokeW = 14;
+  const circumference = 2 * Math.PI * r;
+
+  svg.innerHTML = '';
+  legend.innerHTML = '';
+
+  // Background circle
+  const bg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  bg.setAttribute('cx', cx); bg.setAttribute('cy', cy); bg.setAttribute('r', r);
+  bg.setAttribute('fill', 'none');
+  bg.setAttribute('stroke', '#1a2130');
+  bg.setAttribute('stroke-width', strokeW);
+  svg.appendChild(bg);
+
+  let offset = 0;
+  holdings.forEach((h, i) => {
+    const pct = h.amount / total;
+    const dash = pct * circumference;
+    const gap  = circumference - dash;
+    const color = COLORS[i % COLORS.length];
+
+    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    circle.setAttribute('cx', cx); circle.setAttribute('cy', cy); circle.setAttribute('r', r);
+    circle.setAttribute('fill', 'none');
+    circle.setAttribute('stroke', color);
+    circle.setAttribute('stroke-width', strokeW);
+    circle.setAttribute('stroke-dasharray', `${dash} ${gap}`);
+    circle.setAttribute('stroke-dashoffset', -offset);
+    circle.setAttribute('stroke-linecap', 'round');
+    svg.appendChild(circle);
+
+    offset += dash;
+
+    // Legend
+    const item = document.createElement('div');
+    item.className = 'legend-item';
+    item.innerHTML = `
+      <div class="legend-left">
+        <div class="legend-dot" style="background:${color}"></div>
+        <span class="legend-name">${ASSET_LABELS[h.asset] || h.asset}</span>
+      </div>
+      <span class="legend-pct">${(pct * 100).toFixed(1)}%</span>
+    `;
+    legend.appendChild(item);
+  });
+}
+
+// Init with 2 default rows
+addHolding('stocks', 50000);
+addHolding('gold', 20000);
+</script>
+</body>
+</html>

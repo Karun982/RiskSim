@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>RiskSim — Know Before You Invest</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #04050a;
+  --card: #0d1018;
+  --border: #161d28;
+  --accent: #00e5a0;
+  --red: #ff4d6d;
+  --yellow: #f5c518;
+  --text: #cfd8ec;
+  --muted: #3d4d63;
+  --font-head: 'Bebas Neue', sans-serif;
+  --font-body: 'Syne', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  overflow-x: hidden;
+  cursor: none;
+}
+
+/* ── Custom cursor ── */
+.cursor {
+  position: fixed;
+  width: 10px; height: 10px;
+  background: var(--accent);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+  transition: transform 0.1s, width 0.2s, height 0.2s, opacity 0.2s;
+  mix-blend-mode: difference;
+}
+
+.cursor-ring {
+  position: fixed;
+  width: 36px; height: 36px;
+  border: 1px solid rgba(0,229,160,0.4);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9998;
+  transform: translate(-50%, -50%);
+  transition: transform 0.12s ease, width 0.25s, height 0.25s;
+}
+
+body:hover .cursor { opacity: 1; }
+
+/* ── Particle canvas ── */
+#particle-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ── NAVBAR ── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 52px;
+  background: rgba(4,5,10,0.6);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.logo {
+  font-family: var(--font-head);
+  font-size: 1.6rem;
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
+
+.logo em {
+  font-style: normal;
+  color: var(--accent);
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 36px;
+  list-style: none;
+}
+
+.nav-links a {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+  text-decoration: none;
+  letter-spacing: 0.06em;
+  transition: color 0.2s;
+}
+
+.nav-links a:hover { color: var(--accent); }
+
+.nav-cta {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: #000 !important;
+  background: var(--accent);
+  padding: 9px 22px;
+  border-radius: 6px;
+  letter-spacing: 0.04em;
+  transition: box-shadow 0.2s, transform 0.15s !important;
+}
+
+.nav-cta:hover {
+  box-shadow: 0 0 20px rgba(0,229,160,0.4) !important;
+  transform: translateY(-1px);
+  color: #000 !important;
+}
+
+/* ── HERO ── */
+.hero {
+  position: relative;
+  z-index: 5;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 140px 24px 80px;
+  overflow: hidden;
+}
+
+/* Animated radial glow */
+.hero-glow {
+  position: absolute;
+  top: 40%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 700px; height: 700px;
+  background: radial-gradient(circle, rgba(0,229,160,0.07) 0%, transparent 65%);
+  border-radius: 50%;
+  animation: breathe 6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes breathe {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.7; }
+  50% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+}
+
+.hero-tag {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--accent);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-bottom: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  opacity: 0;
+  animation: slideDown 0.7s 0.2s ease forwards;
+}
+
+.hero-tag::before, .hero-tag::after {
+  content: '';
+  width: 32px; height: 1px;
+  background: var(--accent);
+  opacity: 0.5;
+}
+
+.hero h1 {
+  font-family: var(--font-head);
+  font-size: clamp(5rem, 13vw, 13rem);
+  line-height: 0.9;
+  letter-spacing: 0.02em;
+  margin-bottom: 0;
+  opacity: 0;
+  animation: slideUp 0.8s 0.35s ease forwards;
+}
+
+.hero h1 .line-2 {
+  color: var(--accent);
+  display: block;
+  -webkit-text-stroke: 0px;
+}
+
+.hero h1 .outline {
+  -webkit-text-stroke: 1px rgba(0,229,160,0.3);
+  color: transparent;
+}
+
+.hero-sub {
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+  color: var(--muted);
+  line-height: 1.9;
+  max-width: 480px;
+  margin: 36px auto 44px;
+  opacity: 0;
+  animation: slideUp 0.8s 0.55s ease forwards;
+}
+
+.hero-sub strong { color: var(--text); font-weight: 400; }
+
+.hero-btns {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  justify-content: center;
+  opacity: 0;
+  animation: slideUp 0.8s 0.7s ease forwards;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--accent);
+  color: #000;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 0.92rem;
+  padding: 15px 34px;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: transform 0.15s, box-shadow 0.2s;
+  letter-spacing: -0.01em;
+}
+
+.btn-primary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 40px rgba(0,229,160,0.35);
+}
+
+.btn-ghost {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--muted);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: 0.04em;
+  transition: color 0.2s;
+}
+
+.btn-ghost:hover { color: var(--text); }
+
+/* Scroll indicator */
+.scroll-hint {
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  opacity: 0;
+  animation: fadeIn 1s 1.2s ease forwards;
+}
+
+.scroll-line {
+  width: 1px;
+  height: 48px;
+  background: linear-gradient(to bottom, var(--accent), transparent);
+  animation: scrollPulse 2s ease-in-out infinite;
+}
+
+@keyframes scrollPulse {
+  0%, 100% { opacity: 0.3; transform: scaleY(1); }
+  50% { opacity: 1; transform: scaleY(1.1); }
+}
+
+.scroll-label {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--muted);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  writing-mode: vertical-rl;
+}
+
+/* ── TICKER ── */
+.ticker-wrap {
+  position: relative;
+  z-index: 5;
+  overflow: hidden;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: var(--card);
+  padding: 14px 0;
+}
+
+.ticker {
+  display: flex;
+  gap: 0;
+  animation: ticker 25s linear infinite;
+  white-space: nowrap;
+}
+
+.ticker-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 40px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--muted);
+  border-right: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.ticker-item .dot {
+  width: 5px; height: 5px;
+  background: var(--accent);
+  border-radius: 50%;
+}
+
+@keyframes ticker {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* ── CORE MESSAGE ── */
+.core {
+  position: relative;
+  z-index: 5;
+  padding: 160px 48px;
+  text-align: center;
+  overflow: hidden;
+}
+
+.core-inner {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.core h2 {
+  font-family: var(--font-head);
+  font-size: clamp(3rem, 7vw, 7rem);
+  line-height: 0.95;
+  letter-spacing: 0.02em;
+  margin-bottom: 28px;
+}
+
+.core h2 .accent { color: var(--accent); }
+.core h2 .dim { color: var(--muted); }
+
+.core p {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 2;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+/* ── FEATURES ── */
+.features {
+  position: relative;
+  z-index: 5;
+  padding: 0 48px 160px;
+  max-width: 1140px;
+  margin: 0 auto;
+}
+
+.features-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 40px;
+}
+
+.features-label {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--accent);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.features-count {
+  font-family: var(--font-head);
+  font-size: 5rem;
+  color: var(--border);
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+.feat-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  grid-template-rows: auto auto;
+  gap: 12px;
+}
+
+.feat {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 36px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.3s, transform 0.3s;
+}
+
+.feat:hover {
+  border-color: rgba(0,229,160,0.2);
+  transform: translateY(-4px);
+}
+
+/* Hover glow */
+.feat::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(0,229,160,0.06), transparent 60%);
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.feat:hover::after { opacity: 1; }
+
+.feat.large { grid-row: span 2; }
+
+.feat-num {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  margin-bottom: 40px;
+}
+
+.feat-icon {
+  font-size: 2rem;
+  margin-bottom: 20px;
+  display: block;
+  filter: grayscale(0.2);
+}
+
+.feat h3 {
+  font-family: var(--font-head);
+  font-size: 1.9rem;
+  letter-spacing: 0.03em;
+  margin-bottom: 12px;
+  line-height: 1;
+}
+
+.feat p {
+  font-family: var(--font-mono);
+  font-size: 0.73rem;
+  color: var(--muted);
+  line-height: 1.9;
+}
+
+.feat-accent { color: var(--accent); }
+
+/* ── STATS ROW ── */
+.stats-section {
+  position: relative;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0;
+}
+
+.stat-block {
+  padding: 60px 48px;
+  border-right: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-block:last-child { border-right: none; }
+
+.stat-block::before {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.5s ease;
+}
+
+.stat-block:hover::before { transform: scaleX(1); }
+
+.stat-num {
+  font-family: var(--font-head);
+  font-size: 4.5rem;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.stat-desc {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+/* ── FINAL CTA ── */
+.final {
+  position: relative;
+  z-index: 5;
+  padding: 160px 48px;
+  text-align: center;
+  overflow: hidden;
+}
+
+.final-glow {
+  position: absolute;
+  bottom: -100px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 300px;
+  background: radial-gradient(ellipse, rgba(0,229,160,0.08), transparent 70%);
+  pointer-events: none;
+}
+
+.final h2 {
+  font-family: var(--font-head);
+  font-size: clamp(3rem, 6vw, 6rem);
+  letter-spacing: 0.03em;
+  line-height: 1;
+  margin-bottom: 40px;
+}
+
+.final h2 span { color: var(--accent); }
+
+/* ── ANIMATIONS ── */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  to { opacity: 1; }
+}
+
+/* Scroll reveal */
+.reveal {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 900px) {
+  nav { padding: 18px 24px; }
+  .nav-links { display: none; }
+  .hero { padding: 120px 24px 80px; }
+  .core, .final { padding: 80px 24px; }
+  .features { padding: 0 24px 80px; }
+  .feat-grid { grid-template-columns: 1fr; }
+  .feat.large { grid-row: span 1; }
+  .stats-section { grid-template-columns: 1fr; }
+  .stat-block { border-right: none; border-bottom: 1px solid var(--border); }
+}
+</style>
+</head>
+<body>
+
+<!-- Custom cursor -->
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursor-ring"></div>
+
+<!-- Particle canvas -->
+<canvas id="particle-canvas"></canvas>
+
+<!-- NAVBAR -->
+<nav>
+  <div class="logo">Risk<em>Sim</em></div>
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#stats">Stats</a></li>
+    <li><a href="/app" class="nav-cta">Launch App →</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-glow"></div>
+
+  <div class="hero-tag">RiskSim</div>
+
+  <h1>
+    <span class="outline">STOP</span>
+    <span class="line-2">GUESSING.</span>
+  </h1>
+
+  <p class="hero-sub">
+    Simulate how your money behaves across <strong>1,000 market scenarios</strong> — before you invest a single rupee. See the future, then decide.
+  </p>
+
+  <div class="hero-btns">
+    <a href="/app" class="btn-primary">Run Simulation →</a>
+    <a href="#features" class="btn-ghost">See how it works ↓</a>
+  </div>
+
+  <div class="scroll-hint">
+    <div class="scroll-line"></div>
+    <span class="scroll-label">Scroll</span>
+  </div>
+</section>
+
+<!-- TICKER -->
+<div class="ticker-wrap">
+  <div class="ticker" id="ticker">
+    <!-- Duplicated for seamless loop -->
+    <div class="ticker-item"><div class="dot"></div>1,000 Simulations Per Run</div>
+    <div class="ticker-item"><div class="dot"></div>Stocks · Mutual Funds · Crypto · Bonds · Gold</div>
+    <div class="ticker-item"><div class="dot"></div>Instant Risk Analysis</div>
+    <div class="ticker-item"><div class="dot"></div>Loss Probability Calculator</div>
+    <div class="ticker-item"><div class="dot"></div>Best · Worst · Average Outcomes</div>
+    <div class="ticker-item"><div class="dot"></div>Visual Scenario Paths</div>
+    <div class="ticker-item"><div class="dot"></div>1,000 Simulations Per Run</div>
+    <div class="ticker-item"><div class="dot"></div>Stocks · Mutual Funds · Crypto · Bonds · Gold</div>
+    <div class="ticker-item"><div class="dot"></div>Instant Risk Analysis</div>
+    <div class="ticker-item"><div class="dot"></div>Loss Probability Calculator</div>
+    <div class="ticker-item"><div class="dot"></div>Best · Worst · Average Outcomes</div>
+    <div class="ticker-item"><div class="dot"></div>Visual Scenario Paths</div>
+  </div>
+</div>
+
+<!-- CORE MESSAGE -->
+<section class="core">
+  <div class="core-inner reveal">
+    <h2>
+      <span class="dim">YOU DON'T</span><br/>
+      <span>FEAR INVESTING.</span><br/>
+      <span class="accent">YOU FEAR</span><br/>
+      <span>UNCERTAINTY.</span>
+    </h2>
+    <p>We turn uncertainty into numbers. Numbers you can see, understand, and act on — before risking real money.</p>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <div class="features-header reveal">
+    <div>
+      <div class="features-label">// What we offer</div>
+    </div>
+    <div class="features-count">03</div>
+  </div>
+
+  <div class="feat-grid">
+    <div class="feat large reveal">
+      <div class="feat-num">01 — Core Engine</div>
+      <span class="feat-icon">⚡</span>
+      <h3>SIMULATION<br/><span class="feat-accent">ENGINE</span></h3>
+      <p>Run 1,000 possible investment futures instantly. Each simulation models a realistic market path — giving you a true distribution of outcomes, not a single guess.</p>
+    </div>
+    <div class="feat reveal" style="transition-delay:0.1s">
+      <div class="feat-num">02</div>
+      <span class="feat-icon">🎯</span>
+      <h3>LOSS<br/>PROB.</h3>
+      <p>Know your exact statistical chance of losing money.</p>
+    </div>
+    <div class="feat reveal" style="transition-delay:0.15s">
+      <div class="feat-num">03</div>
+      <span class="feat-icon">📊</span>
+      <h3>VISUAL<br/>PATHS</h3>
+      <p>See every simulated outcome plotted on a live chart.</p>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<section class="stats-section" id="stats">
+  <div class="stat-block reveal">
+    <div class="stat-num">1K</div>
+    <div class="stat-desc">Simulations run<br/>per analysis</div>
+  </div>
+  <div class="stat-block reveal" style="transition-delay:0.1s">
+    <div class="stat-num">5</div>
+    <div class="stat-desc">Asset classes<br/>supported</div>
+  </div>
+  <div class="stat-block reveal" style="transition-delay:0.2s">
+    <div class="stat-num">0%</div>
+    <div class="stat-desc">Real money<br/>needed to test</div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="final">
+  <div class="final-glow"></div>
+  <h2 class="reveal">BEFORE YOU INVEST,<br/><span>TEST IT HERE.</span></h2>
+  <a href="/app" class="btn-primary reveal" style="transition-delay:0.15s">Start Simulation →</a>
+</section>
+
+<script>
+// ── Custom cursor
+const cursor = document.getElementById('cursor');
+const ring   = document.getElementById('cursor-ring');
+let mx = 0, my = 0, rx = 0, ry = 0;
+
+document.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY;
+  cursor.style.left = mx + 'px';
+  cursor.style.top  = my + 'px';
+});
+
+function animateRing() {
+  rx += (mx - rx) * 0.12;
+  ry += (my - ry) * 0.12;
+  ring.style.left = rx + 'px';
+  ring.style.top  = ry + 'px';
+  requestAnimationFrame(animateRing);
+}
+animateRing();
+
+document.querySelectorAll('a, button').forEach(el => {
+  el.addEventListener('mouseenter', () => {
+    cursor.style.width  = '20px';
+    cursor.style.height = '20px';
+    ring.style.width  = '56px';
+    ring.style.height = '56px';
+  });
+  el.addEventListener('mouseleave', () => {
+    cursor.style.width  = '10px';
+    cursor.style.height = '10px';
+    ring.style.width  = '36px';
+    ring.style.height = '36px';
+  });
+});
+
+// ── Particle system
+const canvas = document.getElementById('particle-canvas');
+const ctx    = canvas.getContext('2d');
+let W, H, particles = [];
+
+function resize() {
+  W = canvas.width  = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+class Particle {
+  constructor() { this.reset(); }
+  reset() {
+    this.x  = Math.random() * W;
+    this.y  = Math.random() * H;
+    this.vx = (Math.random() - 0.5) * 0.3;
+    this.vy = (Math.random() - 0.5) * 0.3;
+    this.r  = Math.random() * 1.2 + 0.3;
+    this.a  = Math.random() * 0.4 + 0.05;
+  }
+  update() {
+    this.x += this.vx;
+    this.y += this.vy;
+    if (this.x < 0 || this.x > W || this.y < 0 || this.y > H) this.reset();
+  }
+  draw() {
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(0,229,160,${this.a})`;
+    ctx.fill();
+  }
+}
+
+for (let i = 0; i < 80; i++) particles.push(new Particle());
+
+function drawLines() {
+  for (let i = 0; i < particles.length; i++) {
+    for (let j = i + 1; j < particles.length; j++) {
+      const dx = particles[i].x - particles[j].x;
+      const dy = particles[i].y - particles[j].y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist < 120) {
+        ctx.beginPath();
+        ctx.moveTo(particles[i].x, particles[i].y);
+        ctx.lineTo(particles[j].x, particles[j].y);
+        ctx.strokeStyle = `rgba(0,229,160,${0.06 * (1 - dist/120)})`;
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+      }
+    }
+  }
+}
+
+function loop() {
+  ctx.clearRect(0, 0, W, H);
+  particles.forEach(p => { p.update(); p.draw(); });
+  drawLines();
+  requestAnimationFrame(loop);
+}
+loop();
+
+// ── Scroll reveal
+const reveals = document.querySelectorAll('.reveal');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+      observer.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.15 });
+
+reveals.forEach(el => observer.observe(el));
+
+// ── Feature card mouse glow
+document.querySelectorAll('.feat').forEach(card => {
+  card.addEventListener('mousemove', e => {
+    const rect = card.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width * 100).toFixed(1) + '%';
+    const y = ((e.clientY - rect.top)  / rect.height * 100).toFixed(1) + '%';
+    card.style.setProperty('--mx', x);
+    card.style.setProperty('--my', y);
+  });
+});
+</script>
+</body>
+</html>

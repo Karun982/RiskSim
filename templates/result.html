@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>RiskSim — Results</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #06080d;
+  --surface: #0c0f15;
+  --card: #111620;
+  --border: #1a2130;
+  --accent: #00e5a0;
+  --red: #ff4d6d;
+  --yellow: #f5c542;
+  --text: #dde4f0;
+  --muted: #4a5568;
+  --font: 'Syne', sans-serif;
+  --mono: 'DM Mono', monospace;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  min-height: 100vh;
+}
+
+/* Grid bg */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0,229,160,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,229,160,0.025) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Noise */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.018;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── HEADER ── */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 40px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(6,8,13,0.85);
+  backdrop-filter: blur(16px);
+}
+
+.logo {
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+  color: var(--text);
+}
+
+.logo span { color: var(--accent); }
+
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.username-badge {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.username-badge span {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.dropdown { position: relative; }
+
+.dropdown-btn {
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  width: 34px; height: 34px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.85rem;
+  transition: border-color 0.2s;
+}
+
+.dropdown-btn:hover { border-color: var(--accent); }
+
+.menu {
+  position: absolute;
+  right: 0; top: calc(100% + 10px);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  display: none;
+  min-width: 200px;
+  z-index: 1000;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+}
+
+.menu.open { display: block; }
+
+.menu-stat {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--muted);
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.menu-stat strong {
+  display: block;
+  color: var(--accent);
+  font-size: 0.85rem;
+  margin-top: 2px;
+}
+
+.menu a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--red);
+  text-decoration: none;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  transition: opacity 0.2s;
+}
+
+.menu a:hover { opacity: 0.7; }
+
+/* ── DASHBOARD ── */
+.dashboard {
+  position: relative;
+  z-index: 5;
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 52px 24px 80px;
+}
+
+/* Page title */
+.page-title {
+  margin-bottom: 40px;
+  animation: fadeUp 0.5s ease both;
+}
+
+.page-tag {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  color: var(--accent);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.page-tag::before {
+  content: '';
+  width: 16px; height: 1px;
+  background: var(--accent);
+}
+
+.page-title h1 {
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.page-title h1 span { color: var(--accent); }
+
+/* ── STAT CARDS ── */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(16px);
+  animation: fadeUp 0.5s ease forwards;
+  transition: border-color 0.2s;
+}
+
+.stat-card:hover { border-color: rgba(0,229,160,0.25); }
+
+.stat-card:nth-child(1) { animation-delay: 0.05s; }
+.stat-card:nth-child(2) { animation-delay: 0.1s; }
+.stat-card:nth-child(3) { animation-delay: 0.15s; }
+.stat-card:nth-child(4) { animation-delay: 0.2s; }
+
+/* Top accent line on hover */
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+  transform-origin: left;
+}
+
+.stat-card:hover::before { transform: scaleX(1); }
+
+.stat-card.loss-card {
+  border-color: rgba(255,77,109,0.3);
+}
+
+.stat-card.loss-card::before { background: var(--red); }
+.stat-card.loss-card:hover { border-color: rgba(255,77,109,0.5); }
+
+.stat-label {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.stat-value {
+  font-size: 1.55rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.stat-value.green { color: var(--accent); }
+.stat-value.red   { color: var(--red); }
+.stat-value.yellow { color: var(--yellow); }
+
+.stat-sub {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  color: var(--muted);
+  margin-top: 8px;
+}
+
+/* Loss meter */
+.loss-bar-track {
+  height: 3px;
+  background: var(--border);
+  border-radius: 100px;
+  margin-top: 12px;
+  overflow: hidden;
+}
+
+.loss-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--red));
+  border-radius: 100px;
+  transition: width 1s cubic-bezier(0.34,1.56,0.64,1);
+  width: 0%;
+}
+
+/* ── CHART ── */
+.chart-section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 28px;
+  margin-bottom: 20px;
+  opacity: 0;
+  animation: fadeUp 0.5s 0.3s ease forwards;
+}
+
+.chart-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.chart-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.chart-sub {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.legend {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  color: var(--muted);
+  text-align: right;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.legend-line {
+  width: 16px; height: 2px;
+  border-radius: 2px;
+}
+
+canvas { max-height: 300px; }
+
+/* ── BOTTOM GRID ── */
+.bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* Insight */
+.insight-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 28px;
+  opacity: 0;
+  animation: fadeUp 0.5s 0.4s ease forwards;
+  position: relative;
+  overflow: hidden;
+}
+
+.insight-card::before {
+  content: '';
+  position: absolute;
+  bottom: -40px; right: -40px;
+  width: 150px; height: 150px;
+  background: radial-gradient(circle, rgba(0,229,160,0.07), transparent 70%);
+  border-radius: 50%;
+}
+
+.insight-tag {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  color: var(--accent);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.insight-dot {
+  width: 6px; height: 6px;
+  background: var(--accent);
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.4); }
+}
+
+.insight-text {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  line-height: 1.9;
+  color: var(--text);
+}
+
+/* Time comparison */
+.compare-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 28px;
+  opacity: 0;
+  animation: fadeUp 0.5s 0.5s ease forwards;
+}
+
+.compare-tag {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.comp-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.comp-cell {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  transition: border-color 0.2s;
+}
+
+.comp-cell.highlight {
+  border-color: rgba(0,229,160,0.35);
+  background: rgba(0,229,160,0.04);
+}
+
+.comp-cell-label {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.comp-cell-val {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.comp-cell.highlight .comp-cell-val { color: var(--accent); }
+
+.comp-insight {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+  line-height: 1.8;
+  padding: 12px 16px;
+  background: var(--surface);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+
+/* Simulate again btn */
+.sim-again {
+  margin-top: 32px;
+  text-align: center;
+  opacity: 0;
+  animation: fadeUp 0.5s 0.6s ease forwards;
+}
+
+.sim-again a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font);
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: #000;
+  background: var(--accent);
+  padding: 14px 32px;
+  border-radius: 10px;
+  text-decoration: none;
+  transition: transform 0.15s, box-shadow 0.2s;
+}
+
+.sim-again a:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,229,160,0.3);
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 768px) {
+  .stats { grid-template-columns: 1fr 1fr; }
+  .bottom-grid { grid-template-columns: 1fr; }
+  .header { padding: 16px 20px; }
+  .dashboard { padding: 32px 16px 60px; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <a href="/" class="logo">Risk<span>Sim</span></a>
+<nav style="display:flex; gap:28px; list-style:none;">
+  <a href="/app" style="font-family:'DM Mono',monospace; font-size:0.72rem; color:#4a5568; text-decoration:none; letter-spacing:0.06em;">Simulate</a>
+  <a href="/portfolio" style="font-family:'DM Mono',monospace; font-size:0.72rem; color:#4a5568; text-decoration:none; letter-spacing:0.06em;">Portfolio</a>
+</nav>
+  <div class="profile">
+    <div class="username-badge">
+      👤 <span>{{ username if username else "User" }}</span>
+    </div>
+    <div class="dropdown">
+      <button class="dropdown-btn" onclick="toggleMenu()">☰</button>
+      <div class="menu" id="menu">
+        <div class="menu-stat">
+          Last simulation
+          <strong id="lastSim">—</strong>
+        </div>
+        <a href="/logout">↩ Logout</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="dashboard">
+
+  <div class="page-title">
+    <div class="page-tag">Simulation Complete</div>
+    <h1>Your <span>Investment</span> Results</h1>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-label">Expected Value</div>
+      <div class="stat-value green" id="avg">—</div>
+      <div class="stat-sub">Average of 1,000 simulations</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Best Case</div>
+      <div class="stat-value yellow" id="best">—</div>
+      <div class="stat-sub">95th percentile outcome</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Worst Case</div>
+      <div class="stat-value red" id="worst">—</div>
+      <div class="stat-sub">5th percentile outcome</div>
+    </div>
+    <div class="stat-card loss-card">
+      <div class="stat-label">Loss Probability</div>
+      <div class="stat-value red" id="loss">—</div>
+      <div class="stat-sub">Chance of ending below initial</div>
+      <div class="loss-bar-track">
+        <div class="loss-bar-fill" id="loss-fill"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHART -->
+  <div class="chart-section">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title">Possible Investment Outcomes</div>
+        <div class="chart-sub">100 of 1,000 simulated paths shown</div>
+      </div>
+      <div class="legend">
+        <div class="legend-item">
+          <span>90th %ile</span>
+          <div class="legend-line" style="background:#f5c542"></div>
+        </div>
+        <div class="legend-item">
+          <span>Median</span>
+          <div class="legend-line" style="background:#00e5a0"></div>
+        </div>
+        <div class="legend-item">
+          <span>10th %ile</span>
+          <div class="legend-line" style="background:#ff4d6d"></div>
+        </div>
+      </div>
+    </div>
+    <canvas id="chart"></canvas>
+  </div>
+
+  <!-- BOTTOM GRID -->
+  <div class="bottom-grid">
+
+    <!-- Insight -->
+    <div class="insight-card">
+      <div class="insight-tag">
+        <div class="insight-dot"></div>
+        AI Insight
+      </div>
+      <div class="insight-text" id="insightText">—</div>
+    </div>
+
+    <!-- Time Comparison -->
+    <div class="compare-card">
+      <div class="compare-tag">Time Comparison</div>
+      <div class="comp-row">
+        <div class="comp-cell">
+          <div class="comp-cell-label">5 Years</div>
+          <div class="comp-cell-val" id="comp-5">—</div>
+        </div>
+        <div class="comp-cell highlight">
+          <div class="comp-cell-label">10 Years</div>
+          <div class="comp-cell-val" id="comp-10">—</div>
+        </div>
+      </div>
+      <div class="comp-insight" id="comp-insight">Calculating...</div>
+    </div>
+
+  </div>
+
+  <div class="sim-again">
+    <a href="/app">⚡ Run Another Simulation</a>
+  </div>
+
+</div>
+
+<script>
+const data = JSON.parse(sessionStorage.getItem("simResult"));
+if (!data) {
+  document.body.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:monospace;color:#5a6478;">No simulation data found. <a href="/app" style="color:#00e5a0;margin-left:8px;">Run one →</a></div>`;
+  throw new Error("No simulation data");
+}
+
+function fmt(v) {
+  if (v >= 1e7) return '₹' + (v/1e7).toFixed(2) + 'Cr';
+  if (v >= 1e5) return '₹' + (v/1e5).toFixed(2) + 'L';
+  return '₹' + Math.round(v).toLocaleString('en-IN');
+}
+
+// Stats
+document.getElementById("avg").textContent   = fmt(data.avg);
+document.getElementById("best").textContent  = fmt(data.best);
+document.getElementById("worst").textContent = fmt(data.worst);
+document.getElementById("loss").textContent  = data.loss_prob + "%";
+
+// Loss bar
+setTimeout(() => {
+  document.getElementById("loss-fill").style.width = Math.min(data.loss_prob, 100) + "%";
+}, 300);
+
+// Insight
+const lp = data.loss_prob;
+let insight = "";
+if (lp < 10) {
+  insight = `🟢 Low risk scenario. Only ${lp}% chance of loss across 1,000 simulations. Your investment is historically stable with strong upside potential.`;
+} else if (lp < 25) {
+  insight = `🟡 Moderate risk. A ${lp}% loss probability suggests meaningful volatility, but the average outcome is significantly positive. A reasonable risk-reward tradeoff.`;
+} else if (lp < 50) {
+  insight = `🟠 Elevated risk. ${lp}% of simulations ended in a loss. Consider a longer time horizon or diversifying across asset classes to reduce exposure.`;
+} else {
+  insight = `🔴 High risk. More than half the simulations (${lp}%) resulted in a loss. This asset class carries extreme volatility — only appropriate for high-risk tolerance investors.`;
+}
+document.getElementById("insightText").textContent = data.ai_explanation || insight;
+
+// Time comparison
+const initial = data.initial;
+const years   = data.meta?.years || 10;
+const rate    = Math.pow(data.avg / initial, 1 / years) - 1;
+const val5    = initial * Math.pow(1 + rate, 5);
+const val10   = initial * Math.pow(1 + rate, 10);
+
+document.getElementById("comp-5").textContent  = fmt(val5);
+document.getElementById("comp-10").textContent = fmt(val10);
+
+const diff = val10 - val5;
+if (diff > 0) {
+  const pct = ((diff / val5) * 100).toFixed(1);
+  document.getElementById("comp-insight").textContent =
+    `Staying invested 5 more years could grow your returns by ${pct}% (${fmt(diff)} more).`;
+} else {
+  document.getElementById("comp-insight").textContent =
+    `Extending duration does not significantly improve returns in this scenario.`;
+}
+
+// Dropdown last sim
+document.getElementById("lastSim").textContent = fmt(data.avg);
+
+// Chart
+const ctx = document.getElementById("chart");
+
+const sampledDatasets = data.sampled_paths.map(path => ({
+  data: path,
+  borderColor: "rgba(0,229,160,0.07)",
+  borderWidth: 1,
+  fill: false,
+  pointRadius: 0,
+  tension: 0.4,
+}));
+
+// Add percentile lines
+if (data.percentile_paths) {
+  sampledDatasets.push({
+    data: data.percentile_paths.p90,
+    borderColor: "#f5c542",
+    borderWidth: 2,
+    fill: false,
+    pointRadius: 0,
+    tension: 0.4,
+  });
+  sampledDatasets.push({
+    data: data.percentile_paths.p10,
+    borderColor: "#ff4d6d",
+    borderWidth: 2,
+    fill: false,
+    pointRadius: 0,
+    tension: 0.4,
+  });
+}
+
+sampledDatasets.push({
+  data: data.percentile_paths.p50,
+  borderColor: "#00e5a0",
+  borderWidth: 2.5,
+  fill: false,
+  pointRadius: 0,
+  tension: 0.4,
+});
+
+new Chart(ctx, {
+  type: "line",
+  data: { labels: data.labels, datasets: sampledDatasets },
+  options: {
+    animation: { duration: 1000, easing: "easeOutQuart" },
+    plugins: { legend: { display: false } },
+    scales: {
+      x: {
+        ticks: { color: "#4a5568", font: { family: 'DM Mono', size: 11 } },
+        grid: { color: "rgba(255,255,255,0.04)" },
+        title: { display: true, text: 'Years', color: '#4a5568', font: { family: 'DM Mono', size: 11 } }
+      },
+      y: {
+        ticks: {
+          color: "#4a5568",
+          font: { family: 'DM Mono', size: 11 },
+          callback: v => fmt(v)
+        },
+        grid: { color: "rgba(255,255,255,0.04)" }
+      }
+    }
+  }
+});
+
+// Dropdown toggle
+function toggleMenu() {
+  document.getElementById("menu").classList.toggle("open");
+}
+
+document.addEventListener("click", (e) => {
+  if (!e.target.closest(".dropdown")) {
+    document.getElementById("menu").classList.remove("open");
+  }
+});
+</script>
+</body>
+</html>

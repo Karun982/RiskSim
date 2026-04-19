@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>RiskSim — Simulate</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #090b10;
+    --surface: #0f1218;
+    --card: #141920;
+    --border: #1e2530;
+    --accent: #00e5a0;
+    --accent2: #ff4d6d;
+    --accent3: #fbbf24;
+    --text: #e8edf5;
+    --muted: #5a6478;
+    --font-display: 'Syne', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-display);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,160,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,160,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Header */
+  header {
+    position: relative;
+    z-index: 10;
+    padding: 24px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    background: rgba(9,11,16,0.85);
+    backdrop-filter: blur(10px);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.15rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  .logo-icon {
+    width: 32px; height: 32px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.9rem;
+  }
+
+  .logo span { color: var(--accent); }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .logout-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+
+  .logout-btn:hover {
+    border-color: var(--accent2);
+    color: var(--accent2);
+  }
+
+  /* Main */
+  main {
+    position: relative;
+    z-index: 5;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 24px;
+  }
+
+  /* Progress bar */
+  .progress-wrap {
+    width: 100%;
+    max-width: 560px;
+    margin-bottom: 48px;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .progress-steps {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-bottom: 12px;
+  }
+
+  .step-dot {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--muted);
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+    background: var(--card);
+  }
+
+  .step-dot.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    box-shadow: 0 0 12px rgba(0,229,160,0.3);
+  }
+
+  .step-dot.done {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: #000;
+  }
+
+  .step-line {
+    flex: 1;
+    height: 2px;
+    background: var(--border);
+    transition: background 0.4s ease;
+  }
+
+  .step-line.done { background: var(--accent); }
+
+  .step-labels {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .step-labels span.active { color: var(--accent); }
+
+  /* Cards */
+  .step-card {
+    width: 100%;
+    max-width: 560px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 48px;
+    display: none;
+    animation: fadeUp 0.4s ease both;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .step-card::before {
+    content: '';
+    position: absolute;
+    top: -80px; right: -80px;
+    width: 240px; height: 240px;
+    background: radial-gradient(circle, rgba(0,229,160,0.06), transparent 65%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  .step-card.active { display: block; }
+
+  .step-tag {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--accent);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .step-tag::before {
+    content: '';
+    width: 16px; height: 1px;
+    background: var(--accent);
+    display: block;
+  }
+
+  .step-question {
+    font-size: 1.7rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin-bottom: 32px;
+  }
+
+  /* Step 1 — Amount */
+  .amount-wrap {
+    position: relative;
+    margin-bottom: 16px;
+  }
+
+  .amount-prefix {
+    position: absolute;
+    left: 20px; top: 50%;
+    transform: translateY(-50%);
+    font-family: var(--font-mono);
+    font-size: 1.2rem;
+    color: var(--muted);
+    pointer-events: none;
+  }
+
+  .amount-input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 20px 20px 44px;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 1.5rem;
+    font-weight: 500;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .amount-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0,229,160,0.1);
+  }
+
+  .amount-presets {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 32px;
+  }
+
+  .preset-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 16px;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .preset-btn:hover, .preset-btn.selected {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0,229,160,0.06);
+  }
+
+  /* Step 2 — Asset */
+  .asset-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+
+  .asset-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+
+  .asset-card:hover {
+    border-color: rgba(0,229,160,0.4);
+  }
+
+  .asset-card.selected {
+    border-color: var(--accent);
+    background: rgba(0,229,160,0.06);
+  }
+
+  .asset-card.selected::after {
+    content: '✓';
+    position: absolute;
+    top: 12px; right: 14px;
+    font-size: 0.8rem;
+    color: var(--accent);
+    font-family: var(--font-mono);
+  }
+
+  .asset-emoji { font-size: 1.6rem; margin-bottom: 10px; }
+
+  .asset-name {
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .asset-desc {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .asset-risk {
+    margin-top: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .risk-low { color: var(--accent); }
+  .risk-med { color: var(--accent3); }
+  .risk-high { color: var(--accent2); }
+
+  /* Step 3 — Years */
+  .years-display {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .years-number {
+    font-size: 5rem;
+    font-weight: 800;
+    color: var(--accent);
+    letter-spacing: -0.04em;
+    line-height: 1;
+  }
+
+  .years-label {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  .years-slider {
+    width: 100%;
+    height: 6px;
+    background: var(--border);
+    border-radius: 100px;
+    cursor: pointer;
+    border: none;
+    outline: none;
+    -webkit-appearance: none;
+    margin-bottom: 12px;
+  }
+
+  .years-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 22px; height: 22px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 12px rgba(0,229,160,0.5);
+    transition: transform 0.15s;
+  }
+
+  .years-slider::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+  .years-marks {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--muted);
+    margin-bottom: 32px;
+  }
+
+  .horizon-pills {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 32px;
+  }
+
+  .horizon-pill {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 8px 18px;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .horizon-pill:hover, .horizon-pill.selected {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0,229,160,0.06);
+  }
+
+  /* Navigation buttons */
+  .btn-row {
+    display: flex;
+    gap: 12px;
+  }
+
+  .btn-back {
+    flex: 1;
+    padding: 16px;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--muted);
+    font-family: var(--font-display);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-back:hover {
+    border-color: var(--muted);
+    color: var(--text);
+  }
+
+  .btn-next {
+    flex: 2;
+    padding: 16px;
+    background: var(--accent);
+    border: none;
+    border-radius: 12px;
+    color: #000;
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn-next:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,229,160,0.3);
+  }
+
+  .btn-next:active { transform: translateY(0); }
+
+  .btn-next.loading {
+    background: var(--border);
+    color: var(--muted);
+    cursor: wait;
+  }
+
+  .spinner {
+    width: 16px; height: 16px;
+    border: 2px solid var(--muted);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+
+  .btn-next.loading .spinner { display: block; }
+  .btn-next.loading .btn-label { display: none; }
+
+  /* Summary card (step 3) */
+  .summary-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+
+  .summary-chip {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--muted);
+  }
+
+  .summary-chip strong {
+    display: block;
+    color: var(--accent);
+    font-size: 0.85rem;
+    margin-bottom: 2px;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 600px) {
+    .step-card { padding: 32px 24px; }
+    .asset-grid { grid-template-columns: 1fr; }
+    header { padding: 16px 20px; }
+  }
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dropdown button {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.menu {
+  position: absolute;
+  right: 40px;
+  top: 70px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  display: none;
+  min-width: 180px;
+}
+
+.menu a {
+  display: block;
+  margin-top: 10px;
+  color: var(--accent2);
+  text-decoration: none;
+}
+
+.menu p {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+</style>
+</head>
+<body>
+
+<header>
+<a href="/" class="logo" style="text-decoration: none; color: inherit;">
+  <div class="logo-icon">📈</div>
+  Risk<span>Sim</span>
+</a>
+<nav style="display:flex; gap:28px;">
+  <a href="/app" style="font-family:'DM Mono',monospace; font-size:0.72rem; color:#4a5568; text-decoration:none; letter-spacing:0.06em;">Simulate</a>
+  <a href="/portfolio" style="font-family:'DM Mono',monospace; font-size:0.72rem; color:#4a5568; text-decoration:none; letter-spacing:0.06em;">Portfolio</a>
+</nav>
+
+  <div class="profile">
+    <span id="username">👤  {{ username if username else "User" }}</span>
+
+    <div class="dropdown">
+      <button onclick="toggleMenu()">☰</button>
+
+      <div class="menu" id="menu">
+        <p id="lastSim">No recent simulation</p>
+        <a href="/logout">Logout</a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- Progress -->
+  <div class="progress-wrap">
+    <div class="progress-steps">
+      <div class="step-dot active" id="dot-1">1</div>
+      <div class="step-line" id="line-1"></div>
+      <div class="step-dot" id="dot-2">2</div>
+      <div class="step-line" id="line-2"></div>
+      <div class="step-dot" id="dot-3">3</div>
+    </div>
+    <div class="step-labels">
+      <span id="lbl-1" class="active">Amount</span>
+      <span id="lbl-2">Asset</span>
+      <span id="lbl-3">Timeline</span>
+    </div>
+  </div>
+
+  <!-- Step 1: Amount -->
+  <div class="step-card active" id="step-1">
+    <div class="step-tag">Step 1 of 3</div>
+    <div class="step-question">How much do you want to invest?</div>
+
+    <div class="amount-wrap">
+      <span class="amount-prefix">₹</span>
+      <input class="amount-input" type="number" id="amount" placeholder="10,000" min="1000" step="1000"/>
+    </div>
+
+    <div class="amount-presets">
+      <button class="preset-btn" onclick="setAmount(10000)">₹10K</button>
+      <button class="preset-btn" onclick="setAmount(50000)">₹50K</button>
+      <button class="preset-btn" onclick="setAmount(100000)">₹1L</button>
+      <button class="preset-btn" onclick="setAmount(500000)">₹5L</button>
+      <button class="preset-btn" onclick="setAmount(1000000)">₹10L</button>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-next" onclick="goToStep(2)">
+        <span class="btn-label">Next →</span>
+        <div class="spinner"></div>
+      </button>
+    </div>
+  </div>
+
+  <!-- Step 2: Asset -->
+  <div class="step-card" id="step-2">
+    <div class="step-tag">Step 2 of 3</div>
+    <div class="step-question">What do you want to invest in?</div>
+
+    <div class="asset-grid">
+      <div class="asset-card" onclick="selectAsset('stocks', this)">
+        <div class="asset-emoji">📊</div>
+        <div class="asset-name">Stocks</div>
+        <div class="asset-desc">Equity market exposure with high growth potential</div>
+        <div class="asset-risk risk-med">Medium-High Risk</div>
+      </div>
+      <div class="asset-card" onclick="selectAsset('mutual_funds', this)">
+        <div class="asset-emoji">🏦</div>
+        <div class="asset-name">Mutual Funds</div>
+        <div class="asset-desc">Diversified portfolio managed by professionals</div>
+        <div class="asset-risk risk-med">Medium Risk</div>
+      </div>
+      <div class="asset-card" onclick="selectAsset('crypto', this)">
+        <div class="asset-emoji">₿</div>
+        <div class="asset-name">Crypto</div>
+        <div class="asset-desc">Digital assets with extreme volatility</div>
+        <div class="asset-risk risk-high">Very High Risk</div>
+      </div>
+      <div class="asset-card" onclick="selectAsset('bonds', this)">
+        <div class="asset-emoji">🔒</div>
+        <div class="asset-name">Bonds</div>
+        <div class="asset-desc">Fixed income with stable, predictable returns</div>
+        <div class="asset-risk risk-low">Low Risk</div>
+      </div>
+      <div class="asset-card" onclick="selectAsset('gold', this)">
+        <div class="asset-emoji">🥇</div>
+        <div class="asset-name">Gold</div>
+        <div class="asset-desc">Safe haven asset, hedge against inflation</div>
+        <div class="asset-risk risk-low">Low-Medium Risk</div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-back" onclick="goToStep(1)">← Back</button>
+      <button class="btn-next" onclick="goToStep(3)">
+        <span class="btn-label">Next →</span>
+        <div class="spinner"></div>
+      </button>
+    </div>
+  </div>
+
+  <!-- Step 3: Timeline -->
+  <div class="step-card" id="step-3">
+    <div class="step-tag">Step 3 of 3</div>
+    <div class="step-question">How long will you stay invested?</div>
+
+    <div class="years-display">
+      <div class="years-number" id="years-display">10</div>
+      <div class="years-label">years</div>
+    </div>
+
+    <input type="range" class="years-slider" id="years" min="1" max="30" value="10" oninput="updateYears(this.value)"/>
+
+    <div class="years-marks">
+      <span>1 yr</span>
+      <span>5 yrs</span>
+      <span>10 yrs</span>
+      <span>20 yrs</span>
+      <span>30 yrs</span>
+    </div>
+
+    <div class="horizon-pills">
+      <button class="horizon-pill" onclick="setYears(3)">Short (3y)</button>
+      <button class="horizon-pill selected" onclick="setYears(10)">Medium (10y)</button>
+      <button class="horizon-pill" onclick="setYears(20)">Long (20y)</button>
+    </div>
+
+    <!-- Summary of choices -->
+    <div class="summary-row" id="summary-row">
+      <div class="summary-chip">
+        <strong id="s-amount">—</strong>
+        Amount
+      </div>
+      <div class="summary-chip">
+        <strong id="s-asset">—</strong>
+        Asset
+      </div>
+      <div class="summary-chip">
+        <strong id="s-years">10 yrs</strong>
+        Timeline
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-back" onclick="goToStep(2)">← Back</button>
+      <button class="btn-next" id="simulate-btn" onclick="runSimulation()">
+        <span class="btn-label">⚡ Simulate</span>
+        <div class="spinner"></div>
+      </button>
+    </div>
+  </div>
+
+</main>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script>
+function toggleMenu() {
+  const menu = document.getElementById("menu");
+  menu.style.display = menu.style.display === "block" ? "none" : "block";
+}
+
+// Load last simulation
+const last = JSON.parse(sessionStorage.getItem("simResult"));
+if (last) {
+  document.getElementById("lastSim").innerText =
+    "Last: ₹" + last.avg.toFixed(0);
+}
+</script>
+<script>
+  let currentStep = 1;
+  let selectedAsset = '';
+
+  // Show username in header
+  document.getElementById('welcome-text').textContent = 'Hey there 👋';
+
+  function goToStep(step) {
+    // Validate before proceeding
+    if (step === 2) {
+      const amount = parseFloat(document.getElementById('amount').value);
+      if (!amount || amount < 1000) {
+        document.getElementById('amount').focus();
+        document.getElementById('amount').style.borderColor = 'var(--accent2)';
+        setTimeout(() => document.getElementById('amount').style.borderColor = '', 1500);
+        return;
+      }
+    }
+
+    if (step === 3) {
+      if (!selectedAsset) {
+        // Shake the grid
+        document.querySelector('.asset-grid').style.animation = 'none';
+        setTimeout(() => document.querySelector('.asset-grid').style.animation = '', 100);
+        return;
+      }
+      updateSummary();
+    }
+
+    // Hide current, show next
+    document.getElementById('step-' + currentStep).classList.remove('active');
+    document.getElementById('step-' + step).classList.add('active');
+
+    // Update progress
+    updateProgress(step);
+    currentStep = step;
+  }
+
+  function updateProgress(step) {
+    for (let i = 1; i <= 3; i++) {
+      const dot = document.getElementById('dot-' + i);
+      const lbl = document.getElementById('lbl-' + i);
+      dot.classList.remove('active', 'done');
+      lbl.classList.remove('active');
+
+      if (i < step) { dot.classList.add('done'); dot.textContent = '✓'; }
+      else if (i === step) { dot.classList.add('active'); dot.textContent = i; lbl.classList.add('active'); }
+      else { dot.textContent = i; }
+    }
+
+    for (let i = 1; i <= 2; i++) {
+      const line = document.getElementById('line-' + i);
+      line.classList.toggle('done', i < step);
+    }
+  }
+
+  function setAmount(val) {
+    document.getElementById('amount').value = val;
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('selected'));
+    event.target.classList.add('selected');
+  }
+
+  function selectAsset(asset, el) {
+    selectedAsset = asset;
+    document.querySelectorAll('.asset-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+
+  function updateYears(val) {
+    document.getElementById('years-display').textContent = val;
+    document.getElementById('s-years').textContent = val + ' yrs';
+    document.querySelectorAll('.horizon-pill').forEach(p => p.classList.remove('selected'));
+  }
+
+  function setYears(val) {
+    document.getElementById('years').value = val;
+    document.getElementById('years-display').textContent = val;
+    document.getElementById('s-years').textContent = val + ' yrs';
+    document.querySelectorAll('.horizon-pill').forEach(p => p.classList.remove('selected'));
+    event.target.classList.add('selected');
+  }
+
+  function updateSummary() {
+    const amount = parseFloat(document.getElementById('amount').value);
+    const years  = document.getElementById('years').value;
+    const assetLabels = {
+      stocks: 'Stocks', mutual_funds: 'Mutual Funds',
+      crypto: 'Crypto', bonds: 'Bonds', gold: 'Gold'
+    };
+
+    document.getElementById('s-amount').textContent = formatINR(amount);
+    document.getElementById('s-asset').textContent  = assetLabels[selectedAsset] || '—';
+    document.getElementById('s-years').textContent  = years + ' yrs';
+  }
+
+  function formatINR(val) {
+    if (val >= 1e7) return '₹' + (val / 1e7).toFixed(1) + 'Cr';
+    if (val >= 1e5) return '₹' + (val / 1e5).toFixed(1) + 'L';
+    if (val >= 1e3) return '₹' + (val / 1e3).toFixed(0) + 'K';
+    return '₹' + val;
+  }
+
+  async function runSimulation() {
+    const btn = document.getElementById('simulate-btn');
+    const amount = parseFloat(document.getElementById('amount').value);
+    const years  = parseInt(document.getElementById('years').value);
+
+    if (!amount || !selectedAsset || !years) return;
+
+    btn.classList.add('loading');
+
+    try {
+      const res = await fetch('/simulate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount, years, asset_type: selectedAsset }),
+      });
+
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+
+      // Store result and redirect
+      sessionStorage.setItem('simResult', JSON.stringify(data));
+      window.location.href = '/result';
+
+    } catch (err) {
+      alert('Simulation failed: ' + err.message);
+    } finally {
+      btn.classList.remove('loading');
+    }
+  }
+</script>
+
+</body>
+</html>
